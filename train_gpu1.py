@@ -461,7 +461,7 @@ FINAL_LR_FRAC = 0.0     # final LR as fraction of initial
 
 # Model size
 DEPTH = 8               # number of transformer layers
-DEVICE_BATCH_SIZE = 16  # per-device batch size for training
+DEVICE_BATCH_SIZE = 4  # micro-batch size; grad accum keeps tokens/step constant
 EVAL_BATCH_SIZE = 64    # larger batch for eval (no backprop, much less memory)
 
 # ---------------------------------------------------------------------------
