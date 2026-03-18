@@ -18,8 +18,20 @@ echo "=== Checking data cache ==="
 ssh "$REMOTE" "ls ~/.cache/autoresearch/data/*.parquet 2>/dev/null | wc -l | grep -qv '^0$' \
     || (echo 'Running prepare.py...' && cd $REMOTE_DIR && $UV run prepare.py)"
 
-echo "=== Killing any leftover train processes and clearing old logs ==="
-ssh "$REMOTE" 'ps aux | grep train_gpu | grep -v grep | awk "{print \$2}" | xargs -r kill -9 2>/dev/null; rm -f '"$REMOTE_DIR"'/run_gpu*.log; echo "cleared"'
+echo "=== Killing any leftover GPU processes and clearing old logs ==="
+ssh "$REMOTE" '
+    # Kill any python/uv processes that might be holding GPU memory
+    pids=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | tr -d " ")
+    if [ -n "$pids" ]; then
+        echo "Killing GPU processes: $pids"
+        echo "$pids" | xargs -r kill -9 2>/dev/null || true
+        sleep 3
+    fi
+    # Also kill any leftover train_gpu script processes
+    pkill -9 -f "train_gpu" 2>/dev/null || true
+    rm -f ~/autoresearch/run_gpu*.log
+    echo "cleared"
+'
 
 echo "=== Launching GPU 0 (will compile torch.compile graph) ==="
 ssh "$REMOTE" "cd $REMOTE_DIR && \
