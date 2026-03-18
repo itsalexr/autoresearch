@@ -98,19 +98,13 @@ class CausalSelfAttention(nn.Module):
         if _USE_FA3:
             y = fa3.flash_attn_func(q, k, v, causal=True, window_size=window_size)
         else:
-            # SDPA fallback for pre-Ampere GPUs
-            # q/k/v: (B, T, n_head, head_dim) -> need (B, n_head, T, head_dim)
+            # SDPA fallback for pre-Ampere GPUs (RTX 2060 = Turing/sm75, no FA3)
+            # Use is_causal=True (no explicit mask) so SDPA can use memory-efficient kernel.
+            # Sliding window is dropped — all layers use full causal attention.
             q_t = q.transpose(1, 2)
             k_t = k.transpose(1, 2)
             v_t = v.transpose(1, 2)
-            win = window_size[0]
-            if win > 0 and win < T:
-                # Build sliding window causal mask
-                mask = torch.ones(T, T, dtype=torch.bool, device=q.device)
-                mask = torch.tril(mask) & (torch.arange(T, device=q.device).unsqueeze(0) >= (torch.arange(T, device=q.device).unsqueeze(1) - win + 1))
-                y_t = F.scaled_dot_product_attention(q_t, k_t, v_t, attn_mask=mask)
-            else:
-                y_t = F.scaled_dot_product_attention(q_t, k_t, v_t, is_causal=True)
+            y_t = F.scaled_dot_product_attention(q_t, k_t, v_t, is_causal=True)
             y = y_t.transpose(1, 2).contiguous()
         y = y.contiguous().view(B, T, -1)
         y = self.c_proj(y)
