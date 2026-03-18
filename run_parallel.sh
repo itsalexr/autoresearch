@@ -18,10 +18,15 @@ echo "=== Checking data cache ==="
 ssh "$REMOTE" "ls ~/.cache/autoresearch/data/*.parquet 2>/dev/null | wc -l | grep -qv '^0$' \
     || (echo 'Running prepare.py...' && cd $REMOTE_DIR && $UV run prepare.py)"
 
+echo "=== Killing any leftover train processes and clearing old logs ==="
+ssh "$REMOTE" 'ps aux | grep train_gpu | grep -v grep | awk "{print \$2}" | xargs -r kill -9 2>/dev/null; rm -f '"$REMOTE_DIR"'/run_gpu*.log; echo "cleared"'
+
 echo "=== Launching GPU 0 (will compile torch.compile graph) ==="
 ssh "$REMOTE" "cd $REMOTE_DIR && \
     CUDA_VISIBLE_DEVICES=0 TORCHINDUCTOR_CACHE_DIR=$CACHE_DIR \
     nohup $UV run train_gpu0.py > run_gpu0.log 2>&1 &"
+
+sleep 2  # give nohup time to create/truncate the log file
 
 echo "=== Waiting for compilation to finish (watching for first training step) ==="
 until ssh "$REMOTE" "grep -q 'step' $REMOTE_DIR/run_gpu0.log 2>/dev/null"; do
