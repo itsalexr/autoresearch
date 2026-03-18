@@ -453,7 +453,7 @@ WINDOW_PATTERN = "SSSL" # sliding window pattern: L=full, S=half context
 TOTAL_BATCH_SIZE = 2**19 # ~524K tokens per optimizer step
 EMBEDDING_LR = 0.6      # learning rate for token embeddings (Adam)
 UNEMBEDDING_LR = 0.004  # learning rate for lm_head (Adam)
-MATRIX_LR = 0.04        # learning rate for matrix parameters (Muon)
+MATRIX_LR = 0.06        # learning rate for matrix parameters (Muon) [r1: best, 3.0199 vs 3.0598]
 SCALAR_LR = 0.5         # learning rate for per-layer scalars (Adam)
 WEIGHT_DECAY = 0.2      # cautious weight decay for Muon
 ADAM_BETAS = (0.8, 0.95) # Adam beta1, beta2
@@ -463,8 +463,8 @@ FINAL_LR_FRAC = 0.0     # final LR as fraction of initial
 
 # Model size
 DEPTH = 8               # number of transformer layers
-DEVICE_BATCH_SIZE = 16  # per-device batch size for training (RTX 2060 safe with is_causal SDPA)
-EVAL_BATCH_SIZE = 64    # larger batch for eval (no backprop, much less memory)
+DEVICE_BATCH_SIZE = 8  # fp16 on sm75, backward needs more memory than forward
+EVAL_BATCH_SIZE = 8   # logits B*T*vocab=8*2048*8192=512MB, safe for 12GB
 
 # ---------------------------------------------------------------------------
 # Setup: tokenizer, model, optimizer, dataloader
@@ -475,7 +475,7 @@ torch.manual_seed(42)
 torch.cuda.manual_seed(42)
 torch.set_float32_matmul_precision("high")
 device = torch.device("cuda")
-autocast_ctx = torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16)
+autocast_ctx = torch.amp.autocast(device_type="cuda", dtype=torch.float16)
 H100_BF16_PEAK_FLOPS = 989.5e12
 
 tokenizer = Tokenizer.from_directory()
