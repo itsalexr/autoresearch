@@ -457,7 +457,7 @@ MATRIX_LR = 0.06        # learning rate for matrix parameters (Muon) [r1: best, 
 SCALAR_LR = 0.5         # learning rate for per-layer scalars (Adam)
 WEIGHT_DECAY = 0.15     # weight decay for Muon [r12: 2.5003 vs 2.5297]
 ADAM_BETAS = (0.9, 0.95) # Adam beta1, beta2 [r7: 2.5793 vs 2.6209]
-WARMUP_RATIO = 0.4      # fraction of time budget for LR warmup [r4: 2.6899 vs 2.7925]
+WARMUP_RATIO = 0.45     # fraction of time budget for LR warmup [r13: 2.4820 vs 2.5350]
 WARMDOWN_RATIO = 0.75   # fraction of time budget for LR warmdown [r11: 2.4969 vs 2.5276]
 FINAL_LR_FRAC = 0.0     # final LR as fraction of initial
 
