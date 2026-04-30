@@ -21,3 +21,11 @@ dev/
 
 # Results file
 results.tsv
+
+# H100-specific personal tooling (contains hardcoded IPs/hostnames)
+h100_setup.sh
+h100_replay.py
+h100_results.tsv
+
+# macOS metadata
+.DS_Store
